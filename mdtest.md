@@ -5,11 +5,7 @@ All notable changes to **dsh-remote**.
 ## 0.8.48 — 2026-10-20
 ### 工作区可以是文件系统根目录（issue #60）
 
-**守卫的错位**：`rw_pick_workspace`、`POST /dsh-remote/workspace`、`POST /dsh-remote/mirror`
-三处的 `if (!p || p === '/')` 表面上拦空输入，实际上拦的是**根目录** ——
-`normalizeRemotePath('')` 本来就返回 `'/'`，`!p` 永远不会真。而 `/` 恰恰就是"绝对目录"，
-报错文案自相矛盾。现在只拒**空白的原始输入**（原始字符串 trim 后为空），
-`/`、`D:\` 等根路径一律交给真实的 `isRemoteDir()` 探测回答（不存在的路径照旧被拒）。
+
 
 **配套保护（ROOT_IGNORE）**：放开根目录的唯一真实风险是镜像/搜索撞进合成文件系统 ——
 `/proc`、`/sys` 每次 readdir 都长出新 pid、`/proc/kcore` 号称 128TB，`/dev` 有永不结束的
@@ -36,12 +32,31 @@ stdout，而 Node 按 UTF-8 解码 —— 中文目录名变成乱码，随后�
 中文/emoji/空格目录名都原样回来。直接输入路径、macOS/Linux 选择器本来就没这个问题。
 抽出 `decodePickStdout` / `win32FolderPickScript` 两个纯函数并钉了 5 条单测
 （与 issue #30 的 DPAPI 脚本同一套「只在 Windows 桌面可观察」的测试模式）。
+**守卫的错位**：`rw_pick_workspace`、`POST /dsh-remote/workspace`、`POST /dsh-remote/mirror`
+三处的 `if (!p || p === '/')` 表面上拦空输入，实际上拦的是**根目录** ——
+`normalizeRemotePath('')` 本来就返回 `'/'`，`!p` 永远不会真。而 `/` 恰恰就是"绝对目录"，
+报错文案自相矛盾。现在只拒**空白的原始输入**（原始字符串 trim 后为空），
+`/`、`D:\` 等根路径一律交给真实的 `isRemoteDir()` 探测回答（不存在的路径照旧被拒）。
+asdfasdf
+a
+sdf
+asdf
+as
+df
+asdf
+a
+sdf
 
 **issue #59 — 远程目录选择器双击符号链接不跳转**：`listDirStructured()` 解析符号链接指向时
 用的是 `lstat` —— 它描述的是**链接本身**，所以指向目录的符号链接永远被标成 `'file'`，
 选择器自然不进去。改成 `stat`（跟随链接）：指向目录的链接现在标 `'dir'` 可直接进入，
 并带 `link: true` 标记；悬空链接按注释承诺的那样降级为 `'file'`（旧代码注释说降级、
-实际留下了 `'symlink'`，顺手对齐）。3 条单测。
+实际留下了 `'symlink'`，顺手对齐）。3 条单测。\
+as
+df
+asdf
+as
+dfasdf
 
 **issue #57 — Plugin Hub 安装后重启报错 / 装不上**：真实桌面端（0.2.1-rc.2, win32）复现出两条独立因果：
 
